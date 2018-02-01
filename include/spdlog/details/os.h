@@ -112,29 +112,19 @@ inline bool operator!=(const std::tm& tm1, const std::tm& tm2)
     return !(tm1 == tm2);
 }
 
+// eol definition
+#if !defined (SPDLOG_EOL)
 #ifdef _WIN32
-inline const char* eol()
-{
-    return "\r\n";
-}
+#define SPDLOG_EOL "\r\n"
 #else
-constexpr inline const char* eol()
-{
-    return "\n";
-}
+#define SPDLOG_EOL "\n"
+#endif
 #endif
 
-#ifdef _WIN32
-inline unsigned short eol_size()
-{
-    return 2;
-}
-#else
-constexpr inline unsigned short eol_size()
-{
-    return 1;
-}
-#endif
+SPDLOG_CONSTEXPR static const char* eol = SPDLOG_EOL;
+SPDLOG_CONSTEXPR static int eol_size = sizeof(SPDLOG_EOL) - 1;
+
+
 
 //fopen_s on non windows for writing
 inline int fopen_s(FILE** fp, const filename_t& filename, const filename_t& mode)
@@ -238,6 +228,23 @@ inline size_t thread_id()
 #endif
 
 }
+
+
+// wchar support for windows file names (SPDLOG_WCHAR_FILENAMES must be defined)
+#if defined(_WIN32) && defined(SPDLOG_WCHAR_FILENAMES)
+#define SPDLOG_FILENAME_T(s) L ## s
+inline std::string filename_to_str(const filename_t& filename)
+{
+    std::wstring_convert<std::codecvt_utf8<wchar_t>, wchar_t> c;
+    return c.to_bytes(filename);
+}
+#else
+#define SPDLOG_FILENAME_T(s) s
+inline std::string filename_to_str(const filename_t& filename)
+{
+    return filename;
+}
+#endif
 
 } //os
 } //details

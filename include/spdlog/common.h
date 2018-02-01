@@ -5,7 +5,6 @@
 
 #pragma once
 
-
 #include <string>
 #include <initializer_list>
 #include <chrono>
@@ -19,12 +18,15 @@
 
 #include <spdlog/details/null_mutex.h>
 
-//visual studio does not support noexcept yet
-#ifndef _MSC_VER
-#define SPDLOG_NOEXCEPT noexcept
-#else
+//visual studio upto 2013 does not support noexcept nor constexpr
+#if defined(_MSC_VER) && (_MSC_VER < 1900)
 #define SPDLOG_NOEXCEPT throw()
+#define SPDLOG_CONSTEXPR
+#else
+#define SPDLOG_NOEXCEPT noexcept
+#define SPDLOG_CONSTEXPR constexpr
 #endif
+
 
 namespace spdlog
 {
@@ -36,7 +38,6 @@ namespace sinks
 class sink;
 }
 
-// Common types across the lib
 using log_clock = std::chrono::system_clock;
 using sink_ptr = std::shared_ptr < sinks::sink >;
 using sinks_init_list = std::initializer_list < sink_ptr >;
@@ -110,21 +111,10 @@ private:
 // wchar support for windows file names (SPDLOG_WCHAR_FILENAMES must be defined)
 //
 #if defined(_WIN32) && defined(SPDLOG_WCHAR_FILENAMES)
-#define SPDLOG_FILENAME_T(s) L ## s
 using filename_t = std::wstring;
-inline std::string filename_to_str(const filename_t& filename)
-{
-    std::wstring_convert<std::codecvt_utf8<wchar_t>, wchar_t> c;
-    return c.to_bytes(filename);
-}
 #else
-#define SPDLOG_FILENAME_T(s) s
 using filename_t = std::string;
-
-inline std::string filename_to_str(const filename_t& filename)
-{
-    return filename;
-}
 #endif
+
 
 } //spdlog
